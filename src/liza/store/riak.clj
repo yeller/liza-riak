@@ -90,6 +90,7 @@
                     (.returnBody true)
                     (.execute))))
 
+  store/MergeableBucket
   (store/merge [b v1 v2] (merge-fn v1 v2))
 
   store/ModifiableBucket
