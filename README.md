@@ -24,9 +24,9 @@ configuration that this library supports. Specific things that are configurable:
 ## Usage
 
 ```clojure
-(require [liza.store :as store])
-(require [liza.store.riak :as riak])
-(require [clojure.set :as set])
+(require '[liza.store :as store])
+(require '[liza.store.riak :as riak])
+(require '[clojure.set :as set])
 
 (let [riak-client (riak/connect-pb-client "localhost" 8187)
       users-bucket (riak/connect-pb-bucket "users" client set/union riak/default-content-type pre-serialize post-deserialize {})]
