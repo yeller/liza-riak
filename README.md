@@ -28,9 +28,13 @@ configuration that this library supports. Specific things that are configurable:
 (require '[liza.store.riak :as riak])
 (require '[clojure.set :as set])
 
-(let [riak-client (riak/connect-pb-client "localhost" 8087)
-      users-bucket (riak/connect-pb-bucket "users" riak-client set/union riak/default-content-type pre-serialize post-deserialize {})]
-  (store/modify users-bucket "my-key" (fn [existing] (conj (or existing #{}) {:email "foo@example.com"})))
+(let [riak-client  (riak/connect-pb-client "localhost" 8087)
+      users-bucket (riak/connect-pb-bucket {:bucket-name "users"
+                                            :client riak-client
+                                            :merge-fn set/union})]
+  (store/modify users-bucket "my-key" (fn [existing]
+                                        (conj (or existing #{})
+                                              {:email "foo@example.com"})))
   (store/get users-bucket "my-key"))
 ```
 

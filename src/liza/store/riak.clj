@@ -201,13 +201,6 @@
   ([] (default-retrier 5))
   ([n] (DefaultRetrier/attempts n)))
 
-(def default-options
-  {:allow-siblings true
-   :last-write-wins false
-   :not-found-ok false
-   :backend "bitcask"
-   :r 2})
-
 (defn connect-pb-client
   ([host port] (connect-pb-client host port {}))
   ([host port opts]
@@ -220,22 +213,90 @@
        (.build)))))
 
 (defn connect-pb-bucket
-  ([bucket-name client merge-fn content-type]
-   (connect-pb-bucket bucket-name client merge-fn content-type identity identity {}))
+  "
+  Given a map of options, constructs a new RiakBucket instance. Returns the
+  instance.
 
-  ([bucket-name ^com.basho.riak.client.IRiakClient client merge-fn content-type serialize deserialize opts]
-   (let [settings (clojure.core/merge default-options opts)
-         metrics (new-metrics bucket-name)
-         bucket (do
-                  (-> (.createBucket client ^String bucket-name)
-                    (.lazyLoadBucketProperties)
-                  (.allowSiblings ^boolean (:allow-siblings settings))
-                  (.backend ^String (:backend settings))
-                  (.lastWriteWins ^boolean (:last-write-wins settings))
-                  (.execute)))
-         resolver (make-resolver metrics merge-fn)
-         retrier (default-retrier)]
-     (RiakBucket. bucket-name bucket resolver serialize deserialize retrier merge-fn content-type settings metrics))))
+  Required keys:
+
+  :bucket-name  string; the bucket's name.
+  :client       IRiakClient; client used for connection.
+  :merge-fn     clojure.lang.IFn; used to merge siblings.
+  
+  Optional keys:
+  
+  :content-type string; content type, defaults to riak/default-content-type.
+  :serialize    clojure.lang.IFn; serializer function.
+  :deserialize  clojure.lang.IFn; deserializer function.
+  
+  Optional Riak keys:
+  
+  :allow-siblings  boolean; defaults to true.
+  :last-write-wins boolean; defaults to false.
+  :not-found-ok    boolean; defaults to false.
+  :backend         string; backend to use, defaults to \"bitcask\".
+  :r               integer; the number of required confirmed reads, defaults
+                   to 2.
+  
+  Example invocation:
+
+    (connect-pb-bucket {:bucket-name \"my-cool-bucket\"
+                        :client      riak-client
+                        :merge-fn    clojure.set/union})
+  "
+  [{:keys [^String bucket-name
+           ^com.basho.riak.client.IRiakClient client
+           merge-fn
+           content-type
+           serialize
+           deserialize
+           ^boolean allow-siblings
+           ^boolean last-write-wins
+           ^boolean not-found-ok
+           ^String backend
+           ^Integer r]
+
+    ;; default values
+    :or {content-type             default-content-type
+         serialize                identity
+         deserialize              identity
+         ^boolean allow-siblings  true
+         ^boolean last-write-wins false
+         ^boolean not-found-ok    false
+         ^String  backend         "bitcask"
+         ^Integer r               2}}]
+
+  ;; assert the required args are in the provided map
+  {:pre [(instance? java.lang.String bucket-name)
+         (instance? com.basho.riak.client.IRiakClient client)
+         (instance? clojure.lang.IFn merge-fn)]}
+
+  (let [riak-opts {:allow-siblings allow-siblings
+                   :last-write-wins last-write-wins
+                   :not-found-ok not-found-ok
+                   :backend backend
+                   :r r}
+        metrics  (new-metrics bucket-name)
+        bucket   (-> (.createBucket client bucket-name)
+                     (.lazyLoadBucketProperties)
+                     (.allowSiblings allow-siblings)
+                     (.backend backend)
+                     (.lastWriteWins last-write-wins)
+                     (.execute))
+        resolver (make-resolver metrics merge-fn)
+        retrier  (default-retrier)]
+
+    ;; construct RiakBucket instance
+    (RiakBucket. bucket-name
+                 bucket
+                 resolver
+                 serialize
+                 deserialize
+                 retrier
+                 merge-fn
+                 content-type
+                 riak-opts
+                 metrics)))
 
 (defn connect-pb-test-bucket
   ([bucket-name client merge-fn content-type opts]
