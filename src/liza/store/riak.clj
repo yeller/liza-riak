@@ -222,7 +222,8 @@
 (defn connect-pb-bucket
   ([bucket-name client merge-fn content-type]
    (connect-pb-bucket bucket-name client merge-fn content-type identity identity {}))
-
+  ([bucket-name client merge-fn content-type opts]
+   (connect-pb-bucket bucket-name client merge-fn content-type identity identity opts))
   ([bucket-name ^com.basho.riak.client.IRiakClient client merge-fn content-type serialize deserialize opts]
    (let [settings (clojure.core/merge opts default-options)
          metrics (new-metrics bucket-name)
