@@ -74,7 +74,7 @@
                   (.execute
                     (doto ^FetchObject (.fetch bucket ^String k)
                       (.r ^int (:r opts))
-                      (.notFoundOK (:not-found-ok opts))
+                      (.notFoundOK (:not-found-ok? opts))
                       (.withConverter (make-converter b k))
                       (.withResolver resolver)
                       (.withRetrier retrier)))))
@@ -98,7 +98,7 @@
     (timers/time! (.modify-time ^RiakBucketMetrics metrics)
                   (-> (.store ^Bucket bucket ^String k "")
                     (.r ^int (:r opts))
-                    (.notFoundOK (:not-found-ok opts))
+                    (.notFoundOK (:not-found-ok? opts))
                     (.withConverter (make-converter b k))
                     (.withResolver resolver)
                     (.withRetrier retrier)
@@ -231,12 +231,12 @@
   
   Optional Riak keys:
   
-  :allow-siblings  boolean; defaults to true.
-  :last-write-wins boolean; defaults to false.
-  :not-found-ok    boolean; defaults to false.
-  :backend         string; backend to use, defaults to \"bitcask\".
-  :r               integer; the number of required confirmed reads, defaults
-                   to 2.
+  :allow-siblings?  boolean; defaults to true.
+  :last-write-wins? boolean; defaults to false.
+  :not-found-ok?    boolean; defaults to false.
+  :backend          string; backend to use, defaults to \"bitcask\".
+  :r                integer; the number of required confirmed reads, defaults
+                    to 2.
   
   Example invocation:
 
@@ -250,38 +250,38 @@
            content-type
            serialize
            deserialize
-           ^boolean allow-siblings
-           ^boolean last-write-wins
-           ^boolean not-found-ok
-           ^String backend
+           ^boolean allow-siblings?
+           ^boolean last-write-wins?
+           ^boolean not-found-ok?
+           ^String  backend
            ^Integer r]
 
     ;; default values
-    :or {content-type             default-content-type
-         serialize                identity
-         deserialize              identity
-         ^boolean allow-siblings  true
-         ^boolean last-write-wins false
-         ^boolean not-found-ok    false
-         ^String  backend         "bitcask"
-         ^Integer r               2}}]
+    :or {content-type              default-content-type
+         serialize                 identity
+         deserialize               identity
+         ^boolean allow-siblings?  true
+         ^boolean last-write-wins? false
+         ^boolean not-found-ok?    false
+         ^String  backend          "bitcask"
+         ^Integer r                2}}]
 
   ;; assert the required args are in the provided map
   {:pre [(instance? java.lang.String bucket-name)
          (instance? com.basho.riak.client.IRiakClient client)
          (instance? clojure.lang.IFn merge-fn)]}
 
-  (let [riak-opts {:allow-siblings allow-siblings
-                   :last-write-wins last-write-wins
-                   :not-found-ok not-found-ok
+  (let [riak-opts {:allow-siblings allow-siblings?
+                   :last-write-wins last-write-wins?
+                   :not-found-ok not-found-ok?
                    :backend backend
                    :r r}
         metrics  (new-metrics bucket-name)
         bucket   (-> (.createBucket client bucket-name)
                      (.lazyLoadBucketProperties)
-                     (.allowSiblings allow-siblings)
+                     (.allowSiblings allow-siblings?)
                      (.backend backend)
-                     (.lastWriteWins last-write-wins)
+                     (.lastWriteWins last-write-wins?)
                      (.execute))
         resolver (make-resolver metrics merge-fn)
         retrier  (default-retrier)]
