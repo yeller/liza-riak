@@ -271,9 +271,9 @@
          (instance? com.basho.riak.client.IRiakClient client)
          (instance? clojure.lang.IFn merge-fn)]}
 
-  (let [riak-opts {:allow-siblings allow-siblings?
-                   :last-write-wins last-write-wins?
-                   :not-found-ok not-found-ok?
+  (let [riak-opts {:allow-siblings? allow-siblings?
+                   :last-write-wins? last-write-wins?
+                   :not-found-ok? not-found-ok?
                    :backend backend
                    :r r}
         metrics  (new-metrics bucket-name)
@@ -299,9 +299,5 @@
                  metrics)))
 
 (defn connect-pb-test-bucket
-  ([bucket-name client merge-fn content-type opts]
-   (connect-pb-test-bucket bucket-name client merge-fn content-type identity identity opts))
-
-  ([bucket-name client merge-fn content-type serialize deserialize opts]
-   (connect-pb-bucket bucket-name client merge-fn content-type serialize deserialize
-               (assoc opts :backend "memory"))))
+  [opts]
+  (connect-pb-bucket (assoc opts :backend "memory")))
