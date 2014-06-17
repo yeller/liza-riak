@@ -202,15 +202,35 @@
   ([n] (DefaultRetrier/attempts n)))
 
 (defn connect-pb-client
-  ([host port] (connect-pb-client host port {}))
-  ([host port opts]
-   (RiakFactory/newClient
+  "
+  Given a map of options, constructs a new RiakClient instance. Returns the
+  instance.
+  
+  Required keys:
+
+  :host string; host to connect to.
+  :port integer; port to connect on.
+
+  Optional keys:
+
+  :pool-size integer; pool size, defaults to Integer/MAX_VALUE.
+  :timeout   integer; connection timeout in milliseconds, defaults to 3000.
+
+  Example invocation:
+
+    (connect-pb-client {:host \"localhost\" :port 8087})
+  "
+  [{:keys [host port pool-size timeout]
+    :or   {pool-size Integer/MAX_VALUE
+           timeout   3000}}]
+
+  (RiakFactory/newClient
      (-> (com.basho.riak.client.raw.pbc.PBClientConfig$Builder.)
-       (.withConnectionTimeoutMillis 3000)
-       (.withHost host)
-       (.withPort port)
-       (.withPoolSize (clojure.core/get opts :pool-size Integer/MAX_VALUE))
-       (.build)))))
+         (.withConnectionTimeoutMillis timeout)
+         (.withHost host)
+         (.withPort port)
+         (.withPoolSize pool-size)
+         (.build))))
 
 (defn connect-pb-bucket
   "

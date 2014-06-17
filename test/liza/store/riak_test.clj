@@ -5,7 +5,7 @@
             [liza.store.counters :as counter]
             [clojure.set :as set]))
 
-(def client (riak-store/connect-pb-client "127.0.0.1" 10017 {}))
+(def client (riak-store/connect-pb-client {:host "localhost" :port 10017}))
 
 (deftest get-gets-back-what-was-put
   (let [b (riak-store/connect-pb-test-bucket {:bucket-name "test-bucket1"

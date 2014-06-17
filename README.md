@@ -28,7 +28,7 @@ configuration that this library supports. Specific things that are configurable:
 (require '[liza.store.riak :as riak])
 (require '[clojure.set :as set])
 
-(let [riak-client  (riak/connect-pb-client "localhost" 8087)
+(let [riak-client  (riak/connect-pb-client {:host "localhost" :port 8087})
       users-bucket (riak/connect-pb-bucket {:bucket-name "users"
                                             :client riak-client
                                             :merge-fn set/union})]
