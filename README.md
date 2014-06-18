@@ -28,10 +28,10 @@ configuration that this library supports. Specific things that are configurable:
 (require '[liza.store.riak :as riak])
 (require '[clojure.set :as set])
 
-(let [riak-client  (riak/connect-pb-client {:host "localhost" :port 8087})
-      users-bucket (riak/connect-pb-bucket {:bucket-name "users"
-                                            :client riak-client
-                                            :merge-fn set/union})]
+(let [riak-client  (riak/connect-client {:host "localhost" :port 8087})
+      users-bucket (riak/connect-bucket {:bucket-name "users"
+                                         :client riak-client
+                                         :merge-fn set/union})]
   (store/modify users-bucket "my-key" (fn [existing]
                                         (conj (or existing #{})
                                               {:email "foo@example.com"})))
@@ -60,7 +60,7 @@ associative/commutative/etc, preferably using generative testing. I like both
 
 ## Testing
 
-This client includes a `connect-pb-test-bucket`, which is just a helper for
+This client includes a `connect-test-bucket`, which is just a helper for
 using the in memory riak storage option.
 
 ## License

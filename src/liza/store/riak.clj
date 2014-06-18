@@ -201,7 +201,7 @@
   ([] (default-retrier 5))
   ([n] (DefaultRetrier/attempts n)))
 
-(defn connect-pb-client
+(defn connect-client
   "
   Given a map of options, constructs a new RiakClient instance. Returns the
   instance.
@@ -232,7 +232,7 @@
          (.withPoolSize pool-size)
          (.build))))
 
-(defn connect-pb-bucket
+(defn connect-bucket
   "
   Given a map of options, constructs a new RiakBucket instance. Returns the
   instance.
@@ -318,6 +318,6 @@
                  riak-opts
                  metrics)))
 
-(defn connect-pb-test-bucket
+(defn connect-test-bucket
   [opts]
-  (connect-pb-bucket (assoc opts :backend "memory")))
+  (connect-bucket (assoc opts :backend "memory")))

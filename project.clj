@@ -1,4 +1,4 @@
-(defproject liza-riak "0.4.0-SNAPSHOT"
+(defproject liza-riak "0.5.0-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :description "Abstract key/value store interface"
   :url "https://github.com/liza-riak"
