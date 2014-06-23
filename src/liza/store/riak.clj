@@ -205,7 +205,7 @@
   "
   Given a map of options, constructs a new RiakClient instance. Returns the
   instance.
-  
+
   Required keys:
 
   :host string; host to connect to.
@@ -242,22 +242,22 @@
   :bucket-name  string; the bucket's name.
   :client       IRiakClient; client used for connection.
   :merge-fn     clojure.lang.IFn; used to merge siblings.
-  
+
   Optional keys:
-  
+
   :content-type string; content type, defaults to riak/default-content-type.
   :serialize    clojure.lang.IFn; serializer function.
   :deserialize  clojure.lang.IFn; deserializer function.
-  
+
   Optional Riak keys:
-  
+
   :allow-siblings?  boolean; defaults to true.
   :last-write-wins? boolean; defaults to false.
   :not-found-ok?    boolean; defaults to false.
   :backend          string; backend to use, defaults to \"bitcask\".
   :r                integer; the number of required confirmed reads, defaults
                     to 2.
-  
+
   Example invocation:
 
     (connect-pb-bucket {:bucket-name \"my-cool-bucket\"
