@@ -9,4 +9,5 @@
                  [com.basho.riak/riak-client "1.4.2"]
                  [metrics-clojure "1.0.1"]
                  [fressian-clojure "0.2.0"]
-                 [org.xerial.snappy/snappy-java "1.1.1-M1"]])
+                 [org.xerial.snappy/snappy-java "1.1.1-M1"]
+                 [org.slf4j/slf4j-log4j12 "1.7.7"]])
