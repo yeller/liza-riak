@@ -21,7 +21,8 @@
                                            :merge-fn set/union})]
     (store/wipe b)
     (store/modify b "key" #(conj (or % #{}) "value"))
-    (is (= #{"value"} (store/get b "key")))))
+    (store/modify b "key" #(conj (or % #{}) "value2"))
+    (is (= #{"value" "value2"} (store/get b "key")))))
 
 (deftest put-with-merge-test
   (testing "put with merge before a value is there uses the default"
