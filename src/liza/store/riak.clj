@@ -57,8 +57,8 @@
 
 (defrecord RiakOperationOptions [^boolean not-found-ok?
                                  ^int r
-                                 ^boolean return-body
-                                 ^boolean return-counter])
+                                 ^boolean return-body?
+                                 ^boolean return-counter?])
 
 (deftype RiakBucket [bucket-name
                      ^Bucket bucket
@@ -92,7 +92,7 @@
                     (.withRetrier retrier)
                     (.withValue v)
                     (.withoutFetch)
-                    (.returnBody (:return-body opts true))
+                    (.returnBody (:return-body? opts true))
                     (.execute))))
 
   store/MergeableBucket
@@ -256,8 +256,8 @@
 
   Optional Riak keys:
 
-  :return-body      boolean; defaults to true, if true, body is returned from `modify` and `put`
-  :return-counter   boolean; defaults to true, if true, counter value is returned from `increment`
+  :return-body?     boolean; defaults to true, if true, body is returned from `modify` and `put`
+  :return-counter?  boolean; defaults to true, if true, counter value is returned from `increment`
   :allow-siblings?  boolean; defaults to true.
   :last-write-wins? boolean; defaults to false.
   :not-found-ok?    boolean; defaults to false.
@@ -280,8 +280,10 @@
            ^boolean allow-siblings?
            ^boolean last-write-wins?
            ^boolean not-found-ok?
+           ^boolean return-body?
+           ^boolean return-counter?
            ^String  backend
-           ^Integer r]
+           ^int     r]
 
     ;; default values
     :or {content-type              default-content-type
@@ -291,9 +293,9 @@
          ^boolean last-write-wins? false
          ^boolean not-found-ok?    false
          ^String  backend          "bitcask"
-         ^Integer r                2
-         ^boolean return-body      true
-         ^boolean return-counter   true}}]
+         ^int r                    2
+         ^boolean return-body?     true
+         ^boolean return-counter?  true}}]
 
   ;; assert the required args are in the provided map
   {:pre [(instance? java.lang.String bucket-name)
@@ -302,9 +304,9 @@
 
   (let [riak-opts (map->RiakOperationOptions
                     {:not-found-ok? not-found-ok?
-                     :r r
-                     :return-body return-body
-                     :return-counter return-counter})
+                     :r (int r)
+                     :return-body? return-body?
+                     :return-counter? return-counter?})
         metrics  (new-metrics bucket-name)
         bucket   (-> (.createBucket client bucket-name)
                      (.lazyLoadBucketProperties)
