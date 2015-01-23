@@ -15,6 +15,14 @@
     (store/put b "key" "value")
     (is (= "value" (store/get b "key")))))
 
+(deftest get-gets-back-a-modify
+  (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket2"
+                                           :client client
+                                           :merge-fn set/union})]
+    (store/wipe b)
+    (store/modify b "key" #(conj (or % #{}) "value"))
+    (is (= #{"value"} (store/get b "key")))))
+
 (deftest put-with-merge-test
   (testing "put with merge before a value is there uses the default"
     (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket3"
@@ -25,7 +33,7 @@
       (is (= 1 (store/get b "key")))))
 
   (testing "put with merge merges a new value onto the previous one"
-    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket2"
+    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket4"
                                              :client client
                                              :merge-fn set/union
                                              :deserialize clojure.core/set})]
@@ -36,7 +44,7 @@
 
 (deftest counter-test
   (testing "getting empty counters returns 0"
-    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket3"
+    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket5"
                                              :client client
                                              :merge-fn set/union
                                              :deserialize clojure.core/set})]
@@ -44,7 +52,7 @@
       (is (= 0 (counter/get-count b "counter-1")))))
 
   (testing "incrementing counters gets the incremented value"
-    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket4"
+    (let [b (riak-store/connect-test-bucket {:bucket-name "test-bucket6"
                                              :client client
                                              :merge-fn set/union})]
       (store/wipe b)
