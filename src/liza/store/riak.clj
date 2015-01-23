@@ -55,6 +55,11 @@
     (timers/timer ["riak" bucket-name "serialize-time-time"])
     (timers/timer ["riak" bucket-name "deserialize-time"])))
 
+(defrecord RiakOperationOptions [^boolean not-found-ok?
+                                 ^int r
+                                 ^boolean return-body
+                                 ^boolean return-counter])
+
 (deftype RiakBucket [bucket-name
                      ^Bucket bucket
                      ^ConflictResolver resolver
@@ -87,7 +92,7 @@
                     (.withRetrier retrier)
                     (.withValue v)
                     (.withoutFetch)
-                    (.returnBody true)
+                    (.returnBody (:return-body opts true))
                     (.execute))))
 
   store/MergeableBucket
@@ -103,7 +108,7 @@
                     (.withResolver resolver)
                     (.withRetrier retrier)
                     (.withMutator (mutator metrics f))
-                    (.returnBody true)
+                    (.returnBody (:return-body opts true))
                     (.execute))))
 
   store/DeleteableBucket
@@ -251,11 +256,13 @@
 
   Optional Riak keys:
 
+  :return-body      boolean; defaults to true, if true, body is returned from `modify` and `put`
+  :return-counter   boolean; defaults to true, if true, counter value is returned from `increment`
   :allow-siblings?  boolean; defaults to true.
   :last-write-wins? boolean; defaults to false.
   :not-found-ok?    boolean; defaults to false.
-  :backend          string; backend to use, defaults to \"bitcask\".
-  :r                integer; the number of required confirmed reads, defaults
+  :backend          String; backend to use, defaults to \"bitcask\".
+  :r                int; the number of required confirmed reads, defaults
                     to 2.
 
   Example invocation:
@@ -284,18 +291,20 @@
          ^boolean last-write-wins? false
          ^boolean not-found-ok?    false
          ^String  backend          "bitcask"
-         ^Integer r                2}}]
+         ^Integer r                2
+         ^boolean return-body      true
+         ^boolean return-counter   true}}]
 
   ;; assert the required args are in the provided map
   {:pre [(instance? java.lang.String bucket-name)
          (instance? com.basho.riak.client.IRiakClient client)
          (instance? clojure.lang.IFn merge-fn)]}
 
-  (let [riak-opts {:allow-siblings? allow-siblings?
-                   :last-write-wins? last-write-wins?
-                   :not-found-ok? not-found-ok?
-                   :backend backend
-                   :r r}
+  (let [riak-opts (map->RiakOperationOptions
+                    {:not-found-ok? not-found-ok?
+                     :r r
+                     :return-body return-body
+                     :return-counter return-counter})
         metrics  (new-metrics bucket-name)
         bucket   (-> (.createBucket client bucket-name)
                      (.lazyLoadBucketProperties)
