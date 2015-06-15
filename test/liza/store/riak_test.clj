@@ -3,6 +3,7 @@
   (:require [liza.store :as store]
             [liza.store.riak :as riak-store]
             [liza.store.counters :as counter]
+            [metrics.meters :as meters]
             [clojure.set :as set]))
 
 (def client (riak-store/connect-client {:host "localhost" :port 8087}))
@@ -59,3 +60,29 @@
       (store/wipe b)
       (is (= 1 (counter/increment b "counter-2" 1)))
       (is (= 2 (counter/increment b "counter-2" 1))))))
+
+(defn fails-until-nth-attempt-callable [n]
+  (let [state (atom 0)]
+    (fn []
+      (if (not= @state n)
+        (do
+          (swap! state inc)
+          (throw (ex-info "failing so we retry" {})))
+        0))))
+
+(deftest retry-test
+  (testing "it returns the right result and marks the meter"
+    (let [failure-meter (meters/meter ["liza.store.riak-test" "retry-test" (str (rand 1000))] "failures")
+          success-meter (meters/meter ["liza.store.riak-test" "retry-test" (str (rand 1000))] "success")
+          retrier (riak-store/measured-retrier failure-meter success-meter)
+          c (fails-until-nth-attempt-callable 1)]
+      (is (= 0 (.attempt retrier c)))
+      (is (= 1 (.count failure-meter)))
+      (is (= 1 (.count success-meter)))))
+
+  (testing "it throws the exception if it exceeds the max number of retries"
+    (let [failure-meter (meters/meter ["liza.store.riak-test" "retry-test" (str (rand 1000))] "failures")
+          success-meter (meters/meter ["liza.store.riak-test" "retry-test" (str (rand 1000))] "success")
+          retrier (riak-store/measured-retrier failure-meter success-meter 1)
+          c (fails-until-nth-attempt-callable 3)]
+      (is (thrown? Exception (.attempt retrier c))))))

@@ -8,7 +8,6 @@
   (:import org.xerial.snappy.Snappy
            com.basho.riak.client.RiakFactory
            com.basho.riak.client.bucket.Bucket
-           com.basho.riak.client.cap.DefaultRetrier
            com.basho.riak.client.cap.Retrier
            com.basho.riak.client.cap.ConflictResolver
            com.basho.riak.client.cap.Mutation
@@ -35,7 +34,9 @@
                               deserializing-real-object-count
                               serialize-size
                               serialize-time
-                              deserialize-time])
+                              deserialize-time
+                              retry-failures
+                              retry-successes])
 
 (defn new-metrics [bucket-name]
   (RiakBucketMetrics.
@@ -53,7 +54,9 @@
     (meters/meter ["riak" bucket-name "deserializing-real-object-count"] "objects")
     (histograms/histogram ["riak" bucket-name "serialize-size"])
     (timers/timer ["riak" bucket-name "serialize-time-time"])
-    (timers/timer ["riak" bucket-name "deserialize-time"])))
+    (timers/timer ["riak" bucket-name "deserialize-time"])
+    (meters/meter ["riak" bucket-name "retries"] "failures")
+    (meters/meter ["riak" bucket-name "retries"] "successes")))
 
 (defrecord RiakOperationOptions [^boolean not-found-ok?
                                  ^int r
@@ -202,9 +205,28 @@
                             (into #{}
                                   siblings)))))))))
 
-(defn default-retrier
-  ([] (default-retrier 5))
-  ([n] (DefaultRetrier/attempts n)))
+(defn attempt-measured-retry [^Callable c retries-left failure-meter success-meter]
+  (try
+    (let [result (.call ^Callable c)]
+      (meters/mark! success-meter)
+      result)
+    (catch com.basho.riak.client.convert.ConversionException e
+      (throw e))
+    (catch com.basho.riak.client.raw.MatchFoundException e
+      (throw e))
+    (catch Exception e
+      (if (= retries-left 0)
+        (throw (com.basho.riak.client.RiakRetryFailedException. e))
+        (do
+          (meters/mark! failure-meter)
+          (attempt-measured-retry c (dec retries-left) failure-meter success-meter))))))
+
+(defn measured-retrier
+  ([failure-meter success-meter] (measured-retrier failure-meter success-meter 5))
+  ([failure-meter success-meter n]
+   (reify Retrier
+     (attempt [_ c]
+       (attempt-measured-retry c n failure-meter success-meter)))))
 
 (defn connect-client
   "
@@ -315,7 +337,7 @@
                      (.lastWriteWins last-write-wins?)
                      (.execute))
         resolver (make-resolver metrics merge-fn)
-        retrier  (default-retrier)]
+        retrier  (measured-retrier (.retry-failures metrics) (.retry-successes metrics))]
 
     ;; construct RiakBucket instance
     (RiakBucket. bucket-name
