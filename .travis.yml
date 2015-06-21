@@ -1,3 +1,5 @@
 language: clojure
+notifications:
+    slack: yeller:nHkgeCJkcwwjMF0DfOrmDccR
 services:
   - riak
